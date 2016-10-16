@@ -62,6 +62,7 @@ void data_prepare(void);
 int main(void)
 {
 	
+	//git测试
 	
 	/*-----------------测试程序所需要的变量-----------------*/
 	#if DEBUG 															//						 *	
