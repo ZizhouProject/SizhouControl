@@ -41,10 +41,10 @@ float error_pitch=0,error_roll=0,error_yaw=0,error_X,error_Y,error_Z,last_error_
 int throttle=5850,Moto_PWM_5,Moto_PWM_6,Moto_PWM_7,Moto_PWM_8;	//初始油门
 int16_t core_i,core_p,core_d;
 
-unsigned int Acc_X_Mid = 0, Acc_Y_Mid = 0, Acc_Z_Mid = 0;
-unsigned int Acc_X_Init = 0, Acc_Y_Init = 0, Acc_Z_Init = 0;
-unsigned int Gro_X_Mid = 0, Gro_Y_Mid = 0, Gro_Z_Mid = 0;
-unsigned int Gro_X_Init = 0, Gro_Y_Init = 0, Gro_Z_Init = 0;
+s32 Acc_X_Mid = 0, Acc_Y_Mid = 0, Acc_Z_Mid = 0;
+s32 Acc_X_Init = 0, Acc_Y_Init = 0, Acc_Z_Init = 0;
+s32 Gro_X_Mid = 0, Gro_Y_Mid = 0, Gro_Z_Mid = 0;
+s32 Gro_X_Init = 0, Gro_Y_Init = 0, Gro_Z_Init = 0;
 
 
 
@@ -58,6 +58,8 @@ void data_change(void);
 void count_ACC_GYR_bias(void);
 void count_bias(void);
 void data_prepare(void);
+
+
 
 int main(void)
 {
@@ -159,10 +161,22 @@ int main(void)
 			{
 				flag_control=0;
 				data_prepare();
-				pwm1_mid = Moto_PWM_1 + acc.err_x; if (pwm1_mid > 4500) pwm1_mid = 4500; else if (pwm1_mid < 2000) pwm1_mid = 2000;
-				pwm2_mid = Moto_PWM_2 + acc.err_x; if (pwm2_mid > 4500) pwm2_mid = 4500; else if (pwm2_mid < 2000) pwm2_mid = 2000;
-				pwm3_mid = Moto_PWM_3 - acc.err_x; if (pwm3_mid > 4500) pwm3_mid = 4500; else if (pwm3_mid < 2000) pwm3_mid = 2000;
-				pwm4_mid = Moto_PWM_4 - acc.err_x; if (pwm4_mid > 4500) pwm4_mid = 4500; else if (pwm4_mid < 2000) pwm4_mid = 2000;
+				if (acc.err_x > 7000 || acc.err_x < -7000)
+				{
+			
+					while(1)								/*防止倾角过大*/
+					{
+						Moto_PWM_1 = 2000;
+						Moto_PWM_2 = 2000;
+						Moto_PWM_3 = 2000;
+						Moto_PWM_4 = 2000;
+					}
+				}
+				if (acc.err_x ) 
+				pwm1_mid = 3300 - (s16)(0.1 * acc.err_x); if (pwm1_mid > 4500) pwm1_mid = 4500; else if (pwm1_mid < 2000) pwm1_mid = 2000;
+				pwm2_mid = 3300 - (s16)(0.1 * acc.err_x); if (pwm2_mid > 4500) pwm2_mid = 4500; else if (pwm2_mid < 2000) pwm2_mid = 2000;
+				pwm3_mid = 3300 + (s16)(0.1 * acc.err_x); if (pwm3_mid > 4500) pwm3_mid = 4500; else if (pwm3_mid < 2000) pwm3_mid = 2000;
+				pwm4_mid = 3300 + (s16)(0.1 * acc.err_x); if (pwm4_mid > 4500) pwm4_mid = 4500; else if (pwm4_mid < 2000) pwm4_mid = 2000;
 				
 				Moto_PWM_1 = pwm1_mid;
 				Moto_PWM_2 = pwm2_mid;
@@ -171,18 +185,20 @@ int main(void)
 				
 				
 			}	  
-			OLED_ShowString(40, 0, "Gyr:");			OLED_ShowString(80, 0, "Acc:");
+			OLED_ShowNum(0, 0, acc.err_x, 5);
+			OLED_ShowString(40, 0, "Gyr:");		OLED_ShowString(80, 0, "Acc:");
 		  OLED_ShowString(0, 1, "x:"); 	 		OLED_ShowNum(40,1, gyr.X, 5); 			OLED_ShowNum(80,1, acc.X, 5);							//x
 			OLED_ShowString(0, 2, "y:"); 			OLED_ShowNum(40,2, gyr.Y, 5); 			OLED_ShowNum(80,2, acc.Y, 5);							//y
 			OLED_ShowString(0, 3, "z:"); 			OLED_ShowNum(40,3, gyr.Z, 5); 			OLED_ShowNum(80,3, acc.Z, 5);							//z
 			OLED_ShowString(0, 4, "x_int:"); 	OLED_ShowNum(40,4, Gro_X_Init, 5); 	OLED_ShowNum(80,4, Acc_X_Init, 5);
 			OLED_ShowString(0, 5, "y_int:");	OLED_ShowNum(40,5, Gro_Y_Init, 5); 	OLED_ShowNum(80,5, Acc_Y_Init, 5);
 			OLED_ShowString(0, 6, "z_int:");	OLED_ShowNum(40,6, Gro_Z_Init, 5); 	OLED_ShowNum(80,6, Acc_Z_Init, 5);
+
 			//if (Acc[0] > 80000)
 	
 			//delay_ms(500);
 		       
-			printf("my_acc.x = %d\n", my_Acc[0]);
+			printf("my_acc.x = %d\n", acc.X);
 		
 			
 			
@@ -254,9 +270,9 @@ void count_bias(void)					//计算加计，陀螺仪三轴零偏
 void data_prepare(void)
 {
 	unsigned int i = 0;
-	u32 gyr_x_mid = 0, gyr_y_mid = 0, gyr_z_mid = 0;
+	s32 gyr_x_mid = 0, gyr_y_mid = 0, gyr_z_mid = 0;
 	int16_t gyr_x_filter, gyr_y_filter, gyr_z_filter;
-	u32 acc_x_mid = 0, acc_y_mid = 0, acc_z_mid = 0;
+	s32 acc_x_mid = 0, acc_y_mid = 0, acc_z_mid = 0;
 	int16_t acc_x_filter, acc_y_filter, acc_z_filter;
 	for (i = 0; i < 10; i++)
 	{

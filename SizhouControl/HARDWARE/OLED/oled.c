@@ -136,10 +136,17 @@ u32 oled_pow(u8 m,u8 n)
 //size:字体大小
 //mode:模式	0,填充模式;1,叠加模式
 //num:数值(0~4294967295);	 		  
-void OLED_ShowNum(u8 x,u8 y,u32 num,u8 len)
+void OLED_ShowNum(u8 x,u8 y,s32 num,u8 len)
 {         	
 	u8 t,temp;
-	u8 enshow=0;						   
+	u8 enshow=0;			
+	if	(num < 0)
+	{
+		num = -num;
+		OLED_ShowChar(x,y,'-'); 
+	}
+	else 
+		OLED_ShowChar(x,y,' ');
 	for(t=0;t<len;t++)
 	{
 		temp=(num/oled_pow(10,len-t-1))%10;
@@ -147,19 +154,26 @@ void OLED_ShowNum(u8 x,u8 y,u32 num,u8 len)
 		{
 			if(temp==0)
 			{
-				OLED_ShowChar(x+6*t,y,' ');
+				OLED_ShowChar(x + 6 * (t + 1), y, ' ');
 				continue;
 			}else enshow=1; 
 		 	 
 		}
-	 	OLED_ShowChar(x+6*t,y,temp+'0'); 
+	 	OLED_ShowChar(x+6*(t + 1),y,temp+'0'); 
 	}
 } 
 
-void OLED_ShowNum8x16(u8 x,u8 y,u32 num,u8 len)
+void OLED_ShowNum8x16(u8 x,u8 y,s32 num,u8 len)
 {         	
 	u8 t,temp;
-	u8 enshow=0;						   
+	u8 enshow=0;		
+	if	(num < 0)
+	{
+		num = -num;
+		OLED_ShowChar(x,y,'-'); 
+	}	
+	else 
+		OLED_ShowChar(x,y,' ');
 	for(t=0;t<len;t++)
 	{
 		temp=(num/oled_pow(10,len-t-1))%10;
@@ -167,12 +181,12 @@ void OLED_ShowNum8x16(u8 x,u8 y,u32 num,u8 len)
 		{
 			if(temp==0)
 			{
-				OLED_ShowChar8x16(x+8*t,y,' ');
+				OLED_ShowChar8x16(x+8*(t + 1),y,' ');
 				continue;
 			}else enshow=1; 
 		 	 
 		}
-	 	OLED_ShowChar8x16(x+8*t,y,temp+'0'); 
+	 	OLED_ShowChar8x16(x+8*(t + 1),y,temp+'0'); 
 	}
 } 
 //显示一个字符号串
