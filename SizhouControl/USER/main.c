@@ -43,8 +43,8 @@ int16_t core_i,core_p,core_d;
 
 s32 Acc_X_Mid = 0, Acc_Y_Mid = 0, Acc_Z_Mid = 0;
 s32 Acc_X_Init = 0, Acc_Y_Init = 0, Acc_Z_Init = 0;
-s32 Gro_X_Mid = 0, Gro_Y_Mid = 0, Gro_Z_Mid = 0;
-s32 Gro_X_Init = 0, Gro_Y_Init = 0, Gro_Z_Init = 0;
+s32 Gyr_X_Mid = 0, Gyr_Y_Mid = 0, Gyr_Z_Mid = 0;
+s32 Gyr_X_Init = 0, Gyr_Y_Init = 0, Gyr_Z_Init = 0;
 
 
 
@@ -92,18 +92,20 @@ int main(void)
 	wavefilter_data_init();					//初始化陀螺仪的六个值为0
 	pid_init();											//初始化PID参数为0	
 	delay_ms(2000);
+
+	
+	throttle_stroke();							//电调的启动信号，必须使用！！！
 	/*-----------归一化陀螺仪的值--------*/
 	while(!((flag_Acc>199)&&(flag_Gyr>199)))
 	{
 		count_ACC_GYR_bias();
 	}
 	count_bias();										//对归一化的值进行均值滤波
-	throttle_stroke();							//电调的启动信号，必须使用！！！
-	
 	Moto_PWM_1 = 3300;				//1   //安全启动转速
 	Moto_PWM_2 = 3300;				//4
 	Moto_PWM_3 = 3300;				//2
 	Moto_PWM_4 = 3300;				//3
+
 	
 	TIM1_Int_Init(39,7199);					//初始化一个定时器中断，4MS
 	
@@ -154,8 +156,6 @@ int main(void)
 		#endif
 		
 		#if DEBUG
-			MPU_Get_Accelerometer(&my_Acc[0],&my_Acc[1],&my_Acc[2]);
-			MPU_Get_Gyroscope(&my_Gyr[0],&my_Gyr[1],&my_Gyr[2]);
 							
 			if(flag_control>=1)					//每4ms一次
 			{
@@ -172,11 +172,10 @@ int main(void)
 						Moto_PWM_4 = 2000;
 					}
 				}
-				if (acc.err_x ) 
-				pwm1_mid = 3300 - (s16)(0.1 * acc.err_x); if (pwm1_mid > 4500) pwm1_mid = 4500; else if (pwm1_mid < 2000) pwm1_mid = 2000;
-				pwm2_mid = 3300 - (s16)(0.1 * acc.err_x); if (pwm2_mid > 4500) pwm2_mid = 4500; else if (pwm2_mid < 2000) pwm2_mid = 2000;
-				pwm3_mid = 3300 + (s16)(0.1 * acc.err_x); if (pwm3_mid > 4500) pwm3_mid = 4500; else if (pwm3_mid < 2000) pwm3_mid = 2000;
-				pwm4_mid = 3300 + (s16)(0.1 * acc.err_x); if (pwm4_mid > 4500) pwm4_mid = 4500; else if (pwm4_mid < 2000) pwm4_mid = 2000;
+				pwm1_mid = 3300 + (s16)(0.5 * acc.err_x) - (gyr.X - Gyr_X_Init); if (pwm1_mid > 4500) pwm1_mid = 4500; else if (pwm1_mid < 2000) pwm1_mid = 2000;
+				pwm2_mid = 3300 + (s16)(0.5 * acc.err_x) - (gyr.X - Gyr_X_Init); if (pwm2_mid > 4500) pwm2_mid = 4500; else if (pwm2_mid < 2000) pwm2_mid = 2000;
+				pwm3_mid = 3300 - (s16)(0.5 * acc.err_x) + (gyr.X - Gyr_X_Init); if (pwm3_mid > 4500) pwm3_mid = 4500; else if (pwm3_mid < 2000) pwm3_mid = 2000;
+				pwm4_mid = 3300 - (s16)(0.5 * acc.err_x) + (gyr.X - Gyr_X_Init); if (pwm4_mid > 4500) pwm4_mid = 4500; else if (pwm4_mid < 2000) pwm4_mid = 2000;
 				
 				Moto_PWM_1 = pwm1_mid;
 				Moto_PWM_2 = pwm2_mid;
@@ -186,13 +185,13 @@ int main(void)
 				
 			}	  
 			OLED_ShowNum(0, 0, acc.err_x, 5);
-			OLED_ShowString(40, 0, "Gyr:");		OLED_ShowString(80, 0, "Acc:");
+																				OLED_ShowString(40, 0, "Gyr:");			OLED_ShowString(80, 0, "Acc:");
 		  OLED_ShowString(0, 1, "x:"); 	 		OLED_ShowNum(40,1, gyr.X, 5); 			OLED_ShowNum(80,1, acc.X, 5);							//x
 			OLED_ShowString(0, 2, "y:"); 			OLED_ShowNum(40,2, gyr.Y, 5); 			OLED_ShowNum(80,2, acc.Y, 5);							//y
 			OLED_ShowString(0, 3, "z:"); 			OLED_ShowNum(40,3, gyr.Z, 5); 			OLED_ShowNum(80,3, acc.Z, 5);							//z
-			OLED_ShowString(0, 4, "x_int:"); 	OLED_ShowNum(40,4, Gro_X_Init, 5); 	OLED_ShowNum(80,4, Acc_X_Init, 5);
-			OLED_ShowString(0, 5, "y_int:");	OLED_ShowNum(40,5, Gro_Y_Init, 5); 	OLED_ShowNum(80,5, Acc_Y_Init, 5);
-			OLED_ShowString(0, 6, "z_int:");	OLED_ShowNum(40,6, Gro_Z_Init, 5); 	OLED_ShowNum(80,6, Acc_Z_Init, 5);
+			OLED_ShowString(0, 4, "x_int:"); 	OLED_ShowNum(40,4, Gyr_X_Init, 5); 	OLED_ShowNum(80,4, Acc_X_Init, 5);
+			OLED_ShowString(0, 5, "y_int:");	OLED_ShowNum(40,5, Gyr_Y_Init, 5); 	OLED_ShowNum(80,5, Acc_Y_Init, 5);
+			OLED_ShowString(0, 6, "z_int:");	OLED_ShowNum(40,6, Gyr_Z_Init, 5); 	OLED_ShowNum(80,6, Acc_Z_Init, 5);
 
 			//if (Acc[0] > 80000)
 	
@@ -248,9 +247,9 @@ void count_ACC_GYR_bias(void)
 	Acc_Y_Mid += acc.Y; 	//SA_Y+=acc.Y;
 	Acc_Z_Mid += acc.Z;		//SA_Z+=acc.Z;
 	
-	Gro_X_Mid += gyr.X;		//SG_X+=gyr.X;
-	Gro_Y_Mid += gyr.Y;   //SG_Y+=gyr.Y;
-	Gro_Z_Mid += gyr.Z; 	//SG_Z+=gyr.Z;
+	Gyr_X_Mid += gyr.X;		//SG_X+=gyr.X;
+	Gyr_Y_Mid += gyr.Y;   //SG_Y+=gyr.Y;
+	Gyr_Z_Mid += gyr.Z; 	//SG_Z+=gyr.Z;
 	
 	flag_Acc++;
 	flag_Gyr++;
@@ -262,9 +261,9 @@ void count_bias(void)					//计算加计，陀螺仪三轴零偏
 	Acc_Y_Init = Acc_Y_Mid / 200; //error_a_y=SA_Y/200;
 	Acc_Z_Init = Acc_Z_Mid / 200; //error_a_z=SA_Z/200;
 	
-	Gro_X_Init = Gro_X_Mid / 200;	//error_g_x=SG_X/200;
-	Gro_Y_Init = Gro_Y_Mid / 200;	//error_g_y=SG_Y/200;
-	Gro_Z_Init = Gro_Z_Mid / 200;	//error_g_z=SG_Z/200;	
+	Gyr_X_Init = Gyr_X_Mid / 200;	//error_g_x=SG_X/200;
+	Gyr_Y_Init = Gyr_Y_Mid / 200;	//error_g_y=SG_Y/200;
+	Gyr_Z_Init = Gyr_Z_Mid / 200;	//error_g_z=SG_Z/200;	
 }
 
 void data_prepare(void)
@@ -276,9 +275,10 @@ void data_prepare(void)
 	int16_t acc_x_filter, acc_y_filter, acc_z_filter;
 	for (i = 0; i < 10; i++)
 	{
-		MPU_Get_Gyroscope(&gyr.X,&gyr.Y,&gyr.Z);
-		MPU_Get_Accelerometer(&acc.X,&acc.Y,&acc.Z);
-		gyr_x_mid += gyr.X;
+		MPU_Get_Gyroscope(&gyr.Y,&gyr.X,&gyr.Z);					//此处的驱动可能存在问题
+																											//，x，y轴的方向好像对应错了
+		MPU_Get_Accelerometer(&acc.X,&acc.Y,&acc.Z);			//角度
+		gyr_x_mid += gyr.X;			
 		gyr_y_mid += gyr.Y;
 		gyr_z_mid += gyr.Z;
 		acc_x_mid += acc.X;
@@ -294,7 +294,7 @@ void data_prepare(void)
 	acc.Y = acc_y_mid / 10;
 	acc.Z = acc_z_mid / 10;
 	
-	acc.err_x = Gro_X_Init - acc.X ;
+	acc.err_x = acc.X - Acc_X_Init;
 	
 //	gyr.X=gyr.X-error_g_x+0.5;
 //	gyr.Y=gyr.Y-error_g_y+0.5;
