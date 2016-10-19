@@ -172,10 +172,10 @@ int main(void)
 						Moto_PWM_4 = 2000;
 					}
 				}
-				pwm1_mid = 3300 + (s16)(0.5 * acc.err_x) - (gyr.X - Gyr_X_Init); if (pwm1_mid > 4500) pwm1_mid = 4500; else if (pwm1_mid < 2000) pwm1_mid = 2000;
-				pwm2_mid = 3300 + (s16)(0.5 * acc.err_x) - (gyr.X - Gyr_X_Init); if (pwm2_mid > 4500) pwm2_mid = 4500; else if (pwm2_mid < 2000) pwm2_mid = 2000;
-				pwm3_mid = 3300 - (s16)(0.5 * acc.err_x) + (gyr.X - Gyr_X_Init); if (pwm3_mid > 4500) pwm3_mid = 4500; else if (pwm3_mid < 2000) pwm3_mid = 2000;
-				pwm4_mid = 3300 - (s16)(0.5 * acc.err_x) + (gyr.X - Gyr_X_Init); if (pwm4_mid > 4500) pwm4_mid = 4500; else if (pwm4_mid < 2000) pwm4_mid = 2000;
+				pwm1_mid = 3500 + (s16)(0.06 * (double)acc.err_x) - (s16)(0.3 * (double)(gyr.X - Gyr_X_Init)); if (pwm1_mid > 4500) pwm1_mid = 4500; else if (pwm1_mid < 2000) pwm1_mid = 2000;
+				pwm2_mid = 3500 + (s16)(0.06 * (double)acc.err_x) - (s16)(0.3 * (double)(gyr.X - Gyr_X_Init)); if (pwm2_mid > 4500) pwm2_mid = 4500; else if (pwm2_mid < 2000) pwm2_mid = 2000;
+				pwm3_mid = 3500 - (s16)(0.06 * (double)acc.err_x) + (s16)(0.3 * (double)(gyr.X - Gyr_X_Init)); if (pwm3_mid > 4500) pwm3_mid = 4500; else if (pwm3_mid < 2000) pwm3_mid = 2000;
+				pwm4_mid = 3500 - (s16)(0.06 * (double)acc.err_x) + (s16)(0.3 * (double)(gyr.X - Gyr_X_Init)); if (pwm4_mid > 4500) pwm4_mid = 4500; else if (pwm4_mid < 2000) pwm4_mid = 2000;
 				
 				Moto_PWM_1 = pwm1_mid;
 				Moto_PWM_2 = pwm2_mid;
